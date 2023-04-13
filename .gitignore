@@ -1,3 +1,9 @@
 *venv*/
+**/*.pyc
+
 **/lightning_logs*
+
 .idea
+
+.experiment
+*results*
