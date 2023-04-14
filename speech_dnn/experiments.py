@@ -25,7 +25,7 @@ def load_experiment_state() -> tuple[dict, np.ndarray]:
 		with open(exp_state_path) as state_file:
 			state = json.load(state_file)
 	else:
-		state = {}
+		state = { }
 
 	if exp_cm_path.exists():
 		cm = np.load(exp_cm_path)
@@ -35,6 +35,11 @@ def load_experiment_state() -> tuple[dict, np.ndarray]:
 	return state, cm
 
 
+def save_experiment_state(state: dict):
+	with open(exp_state_path, mode = 'wt') as state_file:
+		json.dump(state, state_file, indent = 4)
+
+
 def update_experiment_state(last_fold: int, accuracy_scores: list[float], cm: np.ndarray):
 	state, _ = load_experiment_state()
 	state.update({
@@ -42,9 +47,7 @@ def update_experiment_state(last_fold: int, accuracy_scores: list[float], cm: np
 		'accuracy_scores': accuracy_scores,
 	})
 
-	with open(exp_state_path, mode = 'wt') as state_file:
-		json.dump(state, state_file, indent = 4)
-
+	save_experiment_state(state)
 	np.save(exp_cm_path, cm)
 
 
@@ -61,12 +64,27 @@ def submit_experiment_done(batch_size: int, network_params: dict):
 	state['last_fold'] = -1
 	state['accuracy_scores'] = []
 
-	with open(exp_state_path, mode = 'wt') as state_file:
-		json.dump(state, state_file, indent = 4)
+	save_experiment_state(state)
+
+
+def begin_experiment(experiment_title: str):
+	state, _ = load_experiment_state()
+	if state and 'title' in state.keys():
+		if state['title'] == experiment_title:
+			return
+
+	exp_save_path.mkdir(parents = True, exist_ok = True)
+	exp_cm_path.unlink()
+	save_experiment_state({
+		'title': experiment_title,
+		'last_fold': -1,
+		'accuracy_scores': [],
+		'done': []
+	})
 
 
 def evaluate_model(
-		n_epochs, n_folds, batch_size, model_params, out_path, network_cls,
+		n_epochs, n_folds, batch_size, model_params, out_path: Path, network_cls,
 		experiment_idx = 0, total_experiments = 0, n_repeats = 5, seed = 1
 ) -> tuple[float, float, np.ndarray]:
 	if not total_experiments:
@@ -80,7 +98,7 @@ def evaluate_model(
 		accuracy_scores = []
 		start_fold = 0
 
-	if confusion_matrix is None:
+	if confusion_matrix is None or saved_state is None:
 		confusion_matrix = np.zeros((n_classes, n_classes))
 
 	torch.use_deterministic_algorithms(True)
@@ -97,7 +115,7 @@ def evaluate_model(
 		model = network_cls(n_classes = n_classes, **model_params)
 		print(f'Run {experiment_idx + 1 + fold}/{total_experiments}')
 
-		time.sleep(5)
+		time.sleep(2)
 
 		# data_module = KFoldImageDataModule(fold, model.train_transforms, model.val_transforms, batch_size, n_folds)
 		# logger = TensorBoardLogger(
@@ -133,7 +151,7 @@ def evaluate_model(
 
 	summary_df = pd.DataFrame(data = seeds_summary)
 	summary_df.to_csv(
-		f'{out_path}/bs_{batch_size}_{"_".join(f"{key}_{value}" for key, value in model_params.items())}.csv',
+		out_path.joinpath(f'bs_{batch_size}_{"_".join(f"{key}_{value}" for key, value in model_params.items())}.csv'),
 		index = False
 	)
 
@@ -144,8 +162,7 @@ def evaluate_model(
 	return accuracy_mean, accuracy_std, confusion_matrix
 
 
-def save_confusion_matrix(confusion_matrix: np.ndarray, class_labels: list[str], path: str):
-	out_path = Path(path)
+def save_confusion_matrix(confusion_matrix: np.ndarray, class_labels: list[str], out_path: Path):
 	out_path.parent.mkdir(parents = True, exist_ok = True)
 
 	fig, ax = plt.subplots(figsize = (6, 6))
@@ -156,11 +173,13 @@ def save_confusion_matrix(confusion_matrix: np.ndarray, class_labels: list[str],
 
 
 def grid_search(
-		n_epochs: int, out_path: str, param_grid: dict[str, list], seed: int, fold_count: int,
-		repeat_count: int, network_cls
+		n_epochs: int, experiment_title: str, param_grid: dict[str, list],
+		seed: int, fold_count: int, repeat_count: int, network_cls
 ):
-	Path(out_path).mkdir(parents = True, exist_ok = True)
-	exp_save_path.mkdir(parents = True, exist_ok = True)
+	begin_experiment(experiment_title)
+
+	out_path = Path('results').joinpath(experiment_title)
+	out_path.mkdir(parents = True, exist_ok = True)
 
 	summary = dict((param_key, []) for param_key in param_grid.keys())
 	summary['cm_path'] = []
@@ -195,7 +214,7 @@ def grid_search(
 
 			saved_state, _ = load_experiment_state()
 			if saved_state and 'done' in saved_state.keys():
-				experiment_config = {'batch_size': batch_size, 'network_params': param_set}
+				experiment_config = { 'batch_size': batch_size, 'network_params': param_set }
 				if experiment_config in saved_state['done']:
 					print('Experiment already done, skipping')
 					experiment_idx += (fold_count * repeat_count)
@@ -209,7 +228,9 @@ def grid_search(
 			)
 			experiment_idx += fold_count * repeat_count
 
-			cm_save_path = f'{out_path}/bs{batch_size}/cm-{i}.png'
+			cm_save_path = out_path.joinpath(
+				f'cm-bs{batch_size}-{"_".join(f"{key}_{value}" for key, value in param_set.items())}.png'
+			)
 			summary['batch_size'].append(batch_size)
 			summary['accuracy_mean'].append(acc_mean)
 			summary['accuracy_std'].append(acc_std)
@@ -220,10 +241,10 @@ def grid_search(
 
 			print('\nSaving experiment results...')
 			save_confusion_matrix(
-				confusion_matrix, class_labels = classes, path = cm_save_path
+				confusion_matrix, class_labels = classes, out_path = cm_save_path
 			)
 			submit_experiment_done(batch_size, network_params = param_set)
 			print('Experiment results saved\n')
 
 	summary_df = pd.DataFrame(data = summary)
-	summary_df.to_csv(f'{out_path}/summary.csv', index = False)
+	summary_df.to_csv(out_path.joinpath(f'summary.csv'), index = False)

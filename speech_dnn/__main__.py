@@ -18,7 +18,7 @@ if __name__ == '__main__':
 	print(f"Using {device} device")
 	
 	grid_search(
-		n_epochs = 150, out_path = f'results/bs{32}-lr{0.003}-l2',
+		n_epochs = 150, experiment_title = 'test-2',
 		seed = 2137, fold_count = 5, repeat_count = 5,
 		network_cls = FakeNetwork,
 		param_grid = {
