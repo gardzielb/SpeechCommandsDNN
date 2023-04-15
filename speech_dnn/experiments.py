@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 from pytorch_lightning.loggers import TensorBoardLogger
 from sklearn.metrics import ConfusionMatrixDisplay
 
-# from speech_dnn.data_loader import KFoldImageDataModule
+from speech_dnn.data_loader import KFoldImageDataModule
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
 
@@ -40,7 +40,7 @@ def evaluate_model(
 		experiment_idx += 1
 		print(f'Run {experiment_idx}/{total_experiments}')
 		
-		data_module = KFoldImageDataModule(fold, model.train_transforms, model.val_transforms, batch_size, n_folds)
+		data_module = KFoldImageDataModule(fold, batch_size, n_folds)
 		logger = TensorBoardLogger(
 			"lightning_logs",
 			name = f'eff_bs_{batch_size}_{"_".join(f"{key}_{value}" for key, value in model_params.items())}_fold_{fold}'
