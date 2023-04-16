@@ -14,7 +14,7 @@ from sklearn.metrics import ConfusionMatrixDisplay
 from speech_dnn.data_loader import KFoldImageDataModule
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
-n_classes = 10
+n_classes = 30
 exp_save_path = Path('.experiment')
 exp_state_path = exp_save_path.joinpath('state.json')
 exp_cm_path = exp_save_path.joinpath('cm.npy')
@@ -115,26 +115,26 @@ def evaluate_model(
 		model = network_cls(n_classes = n_classes, **model_params)
 		print(f'Run {experiment_idx + 1 + fold}/{total_experiments}')
 
-		time.sleep(2)
+		# time.sleep(2)
 
-		# data_module = KFoldImageDataModule(fold, batch_size, n_folds)
-		# logger = TensorBoardLogger(
-		# 	"lightning_logs",
-		# 	name = f'eff_bs_{batch_size}_{"_".join(f"{key}_{value}" for key, value in model_params.items())}_fold_{fold}'
-		# )
-		#
-		# trainer = pl.Trainer(
-		# 	accelerator = 'gpu', devices = 1, max_epochs = n_epochs, logger = logger, precision = 16,
-		# 	callbacks = [EarlyStopping(monitor = "val_loss", patience = 5)]
-		# )
-		# trainer.fit(model, datamodule = data_module)
-		# print("Done!")
-		#
-		# print('Testing')
-		# test_result = trainer.validate(model, datamodule = data_module)
+		data_module = KFoldImageDataModule(fold, batch_size, n_folds)
+		logger = TensorBoardLogger(
+			'lightning_logs',
+			name = f'eff_bs_{batch_size}_{"_".join(f"{key}_{value}" for key, value in model_params.items())}_fold_{fold}'
+		)
 
-		# accuracy = test_result[0]['val_accuracy']
-		accuracy = np.random.random()
+		trainer = pl.Trainer(
+			accelerator = 'gpu', devices = 1, max_epochs = n_epochs, logger = logger, precision = 16,
+			callbacks = [EarlyStopping(monitor = "val_loss", patience = 5)]
+		)
+		trainer.fit(model, datamodule = data_module)
+		print('Done!')
+
+		print('Testing')
+		test_result = trainer.validate(model, datamodule = data_module)
+
+		accuracy = test_result[0]['val_accuracy']
+		# accuracy = np.random.random()
 		accuracy_scores.append(accuracy)
 		confusion_matrix += model.get_test_confusion_matrix()
 

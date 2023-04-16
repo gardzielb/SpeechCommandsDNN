@@ -4,7 +4,7 @@ import warnings
 import torch
 
 from speech_dnn.experiments import grid_search
-from speech_dnn.networks.FakeNetwork import FakeNetwork
+from speech_dnn.networks.AttRnn import AttRnn
 
 warnings.filterwarnings("ignore", ".*does not have many workers.*")
 warnings.filterwarnings("ignore", category = UserWarning)
@@ -18,12 +18,12 @@ if __name__ == '__main__':
 	print(f"Using {device} device")
 	
 	grid_search(
-		n_epochs = 150, experiment_title = 'test-2',
-		seed = 2137, fold_count = 5, repeat_count = 5,
-		network_cls = FakeNetwork,
+		n_epochs = 1, experiment_title = 'test-3',
+		seed = 2137, fold_count = 5, repeat_count = 3,
+		network_cls = AttRnn,
 		param_grid = {
 			'batch_size': [32, 64],
-			'learn_rate': [0.003, 0.01],
-			'l2': [0.0, 0.0005]
+			'lr': [0.003, 0.01],
+			'l2': [0.0]
 		}
 	)
