@@ -9,3 +9,5 @@ pandas~=2.0.0
 numpy~=1.24.2
 torchmetrics~=0.11.4
 tqdm~=4.65.0
+tb_parse~=0.0.7
+soundfile~=0.12.1
