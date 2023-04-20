@@ -9,7 +9,7 @@ if __name__ == '__main__':
 	arg_parser.add_argument('src_path')
 	arg_parser.add_argument('-o', '--out-path', type = str)
 	arg_parser.add_argument('-f', '--format', type = str, default = 'wav')
-	arg_parser.add_argument('-n', '--n-samples', type = int)
+	arg_parser.add_argument('-n', '--n-samples', type = int, default = 16_000)
 	args = arg_parser.parse_args()
 
 	src_path = Path(args.src_path)

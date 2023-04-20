@@ -1,6 +1,5 @@
 import itertools
 import json
-import time
 from pathlib import Path
 
 import numpy as np
@@ -14,7 +13,7 @@ from sklearn.metrics import ConfusionMatrixDisplay
 from speech_dnn.data_loader import KFoldImageDataModule
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
-n_classes = 30
+n_classes = 31
 exp_save_path = Path('.experiment')
 exp_state_path = exp_save_path.joinpath('state.json')
 exp_cm_path = exp_save_path.joinpath('cm.npy')
@@ -74,7 +73,7 @@ def begin_experiment(experiment_title: str):
 			return
 
 	exp_save_path.mkdir(parents = True, exist_ok = True)
-	exp_cm_path.unlink()
+	exp_cm_path.unlink(missing_ok = True)
 	save_experiment_state({
 		'title': experiment_title,
 		'last_fold': -1,
@@ -115,8 +114,6 @@ def evaluate_model(
 		model = network_cls(n_classes = n_classes, **model_params)
 		print(f'Run {experiment_idx + 1 + fold}/{total_experiments}')
 
-		# time.sleep(2)
-
 		data_module = KFoldImageDataModule(fold, batch_size, n_folds)
 		logger = TensorBoardLogger(
 			'lightning_logs',
@@ -134,7 +131,6 @@ def evaluate_model(
 		test_result = trainer.validate(model, datamodule = data_module)
 
 		accuracy = test_result[0]['val_accuracy']
-		# accuracy = np.random.random()
 		accuracy_scores.append(accuracy)
 		confusion_matrix += model.get_test_confusion_matrix()
 

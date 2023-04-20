@@ -1,0 +1,11 @@
+torch==2.0.0
+torchaudio==2.0.1
+torchvision==0.15.1
+pytorch-lightning==2.0.1.post0
+tensorboard==2.12.2
+scikit-learn==1.2.2
+matplotlib==3.7.1
+pandas==2.0.0
+tbparse==0.0.7
+tqdm~=4.65.0
+soundfile~=0.12.1

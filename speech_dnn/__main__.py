@@ -22,7 +22,7 @@ if __name__ == '__main__':
 		seed = 2137, fold_count = 5, repeat_count = 3,
 		network_cls = AttRnn,
 		param_grid = {
-			'batch_size': [32, 64],
+			'batch_size': [128],
 			'lr': [0.003, 0.01],
 			'l2': [0.0]
 		}

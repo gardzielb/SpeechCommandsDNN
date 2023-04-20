@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 root = Path('./data')
@@ -66,8 +67,9 @@ class KFoldImageDataModule(LightningDataModule):
 		self.split_seed = split_seed
 		self.i = i
 		self.n_repeats = n_repeats
-		self.train_dataset = SoundFolder('./data/train/audio')
-		self.validation_dataset = SoundFolder('./data/train/audio')
+		data_path = os.getenv('DATA_PATH', './data')
+		self.train_dataset = SoundFolder(f'{data_path}/train/audio')
+		self.validation_dataset = SoundFolder(f'{data_path}/train/audio')
 		self.train_fold = None
 		self.val_fold = None
 
@@ -81,11 +83,11 @@ class KFoldImageDataModule(LightningDataModule):
 			
 
 	def train_dataloader(self):
-		return DataLoader(dataset = self.train_fold, batch_size = self.batch_size, num_workers = 6, pin_memory = True,
+		return DataLoader(dataset = self.train_fold, batch_size = self.batch_size, num_workers = 10, pin_memory = True,
 						  shuffle = True)
 
 	def val_dataloader(self):
-		return DataLoader(dataset = self.val_fold, batch_size = self.batch_size, num_workers = 6, pin_memory = True)
+		return DataLoader(dataset = self.val_fold, batch_size = self.batch_size, num_workers = 10, pin_memory = True)
 
 	def classes(self):
 		return self.train_dataset.classes
