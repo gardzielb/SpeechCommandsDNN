@@ -13,7 +13,7 @@ from sklearn.metrics import ConfusionMatrixDisplay
 from speech_dnn.data_loader import KFoldImageDataModule
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
-n_classes = 31
+n_classes = 12
 exp_save_path = Path('.experiment')
 exp_state_path = exp_save_path.joinpath('state.json')
 exp_cm_path = exp_save_path.joinpath('cm.npy')
@@ -159,8 +159,8 @@ def evaluate_model(
 
 
 def save_confusion_matrix(confusion_matrix: np.ndarray, class_labels: list[str], out_path: Path):
-	out_path.parent.mkdir(parents = True, exist_ok = True)
-
+	# out_path.parent.mkdir(parents = True, exist_ok = True)
+	# np.save(out_path.as_posix(), confusion_matrix)
 	fig, ax = plt.subplots(figsize = (6, 6))
 	cm_disp = ConfusionMatrixDisplay(confusion_matrix.round().astype('int'), display_labels = class_labels)
 	cm_disp.plot(xticks_rotation = 'vertical', ax = ax, colorbar = False, values_format = 'd')
@@ -202,7 +202,7 @@ def grid_search(
 
 	total_experiments = len(batch_sizes) * len(param_sets) * repeat_count * len(folds)
 	experiment_idx = 0
-	classes = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
+	classes = ['down', 'go', 'left', 'no', 'off', 'on', 'right', 'silence', 'stop', 'unknown', 'up', 'yes']
 
 	for batch_size in batch_sizes:
 		for i, param_set in enumerate(param_sets):
@@ -236,9 +236,7 @@ def grid_search(
 				summary[param_key].append(param_set[param_key])
 
 			print('\nSaving experiment results...')
-			save_confusion_matrix(
-				confusion_matrix, class_labels = classes, out_path = cm_save_path
-			)
+			save_confusion_matrix(confusion_matrix, classes, out_path = cm_save_path)
 			submit_experiment_done(batch_size, network_params = param_set)
 			print('Experiment results saved\n')
 

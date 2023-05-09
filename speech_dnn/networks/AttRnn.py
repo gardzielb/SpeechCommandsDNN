@@ -10,11 +10,12 @@ from torchmetrics import ConfusionMatrix
 
 
 class AttRnn(pl.LightningModule):
-    def __init__(self, n_classes, lr = 0.001, l2 = 0.0):
+    def __init__(self, n_classes, lr = 0.001, l2 = 0.0, lr_decay = None):
         super().__init__()
         self.n_classes = n_classes
         self.lr = lr
         self.l2 = l2
+        self.lr_decay = lr_decay
 
         self.conv_block1 = nn.Sequential(
             nn.Conv2d(1, 10, kernel_size=(5, 1), padding='same'),
@@ -86,5 +87,9 @@ class AttRnn(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.l2)
-        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.4)
+
+        if self.lr_decay is None:
+            return optimizer
+
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = self.lr_decay[0], gamma = self.lr_decay[1])
         return [optimizer], [scheduler]
