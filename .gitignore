@@ -8,3 +8,4 @@
 .experiment
 *results*
 **/*data*
+!speech_dnn/data_*

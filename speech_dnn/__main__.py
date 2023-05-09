@@ -16,14 +16,15 @@ if __name__ == '__main__':
 
 	device = "cuda" if torch.cuda.is_available() else "cpu"
 	print(f"Using {device} device")
-	
+
 	grid_search(
-		n_epochs = 1, experiment_title = 'test-3',
-		seed = 2137, fold_count = 5, repeat_count = 3,
+		n_epochs = 100, experiment_title = 'test-noise',
+		seed = 2137, fold_count = 5, repeat_count = 5,
 		network_cls = AttRnn,
 		param_grid = {
-			'batch_size': [128],
-			'lr': [0.003, 0.01],
-			'l2': [0.0]
+			'batch_size': [64],
+			'lr': [0.001],
+			'l2': [0.0],
+			'augmentation_type': ['noise']
 		}
 	)
